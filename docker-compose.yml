@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: hackaton-postgres
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file: .env
+    expose:
+      - 5432
+
+  django:
+    container_name: hackaton-django
+    build: ./backend
+    command: gunicorn main.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ./backend:/usr/src/backend
+      - static:/usr/src/static
+      - media:/usr/src/media
+      - logs:/usr/src/logs
+    expose:
+      - 8000
+    env_file: .env
+    depends_on:
+      - postgres
+
+  angular:
+    container_name: hackaton-angular
+    build: ./frontend
+    volumes:
+      - frontend:/usr/src/frontend
+
+  nginx:
+    container_name: hackaton-nginx
+    build: ./nginx
+    ports:
+      - "80:80"
+    volumes:
+      - static:/usr/src/static
+      - media:/usr/src/media
+      - frontend:/usr/src/frontend
+    depends_on:
+      - angular
+      - django
+
+volumes:
+  postgres_data:
+  static:
+  media:
+  logs:
+  frontend:
